@@ -147,6 +147,33 @@ static inline void render_ui(AppState *state) {
    SDL_RenderTexture(state->renderer, state->ui_texture, NULL, &(SDL_FRect){10, 10, 200, 30});
 }
 
+SDL_AppResult init_window(AppState *state){
+    state->window = SDL_CreateWindow("SDL3 Sprite Benchmark", SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    if(state->window == NULL){
+        SDL_Log("Couldn't create window: %s", SDL_GetError());
+        SDL_free(state);
+        return SDL_APP_FAILURE;
+    }
+    state->renderer = SDL_CreateGPURenderer(NULL, state->window);
+    if(state->renderer == NULL){
+        SDL_Log("Couldn't create GPU renderer: %s", SDL_GetError());
+        state->renderer = SDL_CreateRenderer(state->window, 
+        "vulkan,opengl,PSP,psp,gpu,opengles2,software");
+    }
+
+    if(state->renderer == NULL){
+        SDL_Log("Couldn't create renderer: %s", SDL_GetError());
+        SDL_free(state);
+        return SDL_APP_FAILURE;
+    }
+
+    // for debugging / optimizing.
+    for(int i=0; i < SDL_GetNumRenderDrivers(); i++){
+        SDL_Log(SDL_GetRenderDriver(i));
+    }
+    return SDL_APP_CONTINUE;
+}
+
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     SDL_Surface *surface = NULL;
     AppState *state = NULL;
@@ -165,21 +192,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     }
     state->movement_enabled = MOVEMENT_ENABLED_DEFAULT;
 
-    state->window = SDL_CreateWindow("SDL3 Sprite Benchmark", SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-    if(state->window == NULL){
-        SDL_Log("Couldn't create window: %s", SDL_GetError());
-        SDL_free(state);
-        return SDL_APP_FAILURE;
-    }
-    state->renderer = SDL_CreateGPURenderer(NULL, state->window);
-    if(state->renderer == NULL){
-        SDL_Log("Couldn't create GPU renderer: %s", SDL_GetError());
-        state->renderer = SDL_CreateRenderer(state->window, NULL);
-    }
-
-    if(state->renderer == NULL){
-        SDL_Log("Couldn't create renderer: %s", SDL_GetError());
-        SDL_free(state);
+    if(init_window(state)!= SDL_APP_CONTINUE){
         return SDL_APP_FAILURE;
     }
 
@@ -235,6 +248,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     state->rotation_enabled = false;
 
     *appstate = state;
+    SDL_Log("Init complete!");
     return SDL_APP_CONTINUE;
 }
 
