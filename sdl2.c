@@ -21,6 +21,7 @@ typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;
+    SDL_Texture *ui_texture;
     SDL_GameController *gamepad;
     Sint32 gamepad_id;  // SDL2 uses Sint32 for joystick IDs
     int texture_width;
@@ -30,6 +31,7 @@ typedef struct {
     int active_sprites;
     bool movement_enabled;
     bool rotation_enabled;
+    bool dirty_ui;
     Uint64 last_frame_time;
     Uint64 fps_update_time;
     Uint64 animate_update_time;
@@ -121,6 +123,7 @@ static void adjust_sprite_count(AppState *state, int delta) {
         state->active_sprites = state->num_sprites;
     if (state->active_sprites < 0)
         state->active_sprites = 0;
+    state->dirty_ui = true;
 }
 
 static void process_event(AppState *state, SDL_Event *event) {
@@ -180,6 +183,25 @@ static void process_event(AppState *state, SDL_Event *event) {
             state->rotation_enabled = !state->rotation_enabled;
         }
     }
+}
+
+static inline void render_ui(AppState *state) {
+    if (state->dirty_ui) {
+        char fps_text[128];
+        SDL_snprintf(fps_text, sizeof(fps_text), "fps %d   sprites %d", state->current_fps, state->active_sprites);
+        SDL_Color black = {0, 0, 0, 255};
+
+        SDL_SetRenderTarget(state->renderer, state->ui_texture);
+        SDL_SetRenderDrawColor(state->renderer, 255, 255, 255, 255);
+        SDL_RenderClear(state->renderer);
+        debug_font_draw_string(state->renderer, fps_text, 10, 10, black);
+        SDL_SetRenderTarget(state->renderer, NULL);
+
+        state->dirty_ui = false;
+    }
+
+    SDL_Rect ui_rect = {10, 10, 200, 30};
+    SDL_RenderCopy(state->renderer, state->ui_texture, NULL, &ui_rect);
 }
 
 int main(int argc, char *argv[]) {
@@ -246,7 +268,10 @@ int main(int argc, char *argv[]) {
     srand(2026);
     state->num_sprites = MAX_SPRITES;
     state->active_sprites = INITIAL_SPRITES;
-    
+    state->dirty_ui = true;
+
+    state->ui_texture = SDL_CreateTexture(state->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 230, 30);
+
     for (int i = 0; i < state->num_sprites; i++) {
         init_sprite(&state->sprites[i]);
     }
@@ -273,6 +298,7 @@ int main(int argc, char *argv[]) {
             state->current_fps = state->frame_count / 3;
             state->frame_count = 0;
             state->fps_update_time = now;
+            state->dirty_ui = true;
         }
 
         // Clear
@@ -295,11 +321,7 @@ int main(int argc, char *argv[]) {
             render_sprite(state, s);
         }
 
-        char title[128];
-        SDL_Color black = {0, 0, 0, 255};
-        snprintf(title, sizeof(title), "fps: %d  sprites: %d", 
-                 state->current_fps, state->active_sprites);
-        debug_font_draw_string(state->renderer, title, 10, 10, black);
+        render_ui(state);
 
         SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
         SDL_RenderPresent(state->renderer);
@@ -308,6 +330,7 @@ int main(int argc, char *argv[]) {
     // Cleanup
     if (state->sprites) free(state->sprites);
     if (state->texture) SDL_DestroyTexture(state->texture);
+    if (state->ui_texture) SDL_DestroyTexture(state->ui_texture);
     if (state->gamepad) SDL_GameControllerClose(state->gamepad);
     if (state->renderer) SDL_DestroyRenderer(state->renderer);
     if (state->window) SDL_DestroyWindow(state->window);

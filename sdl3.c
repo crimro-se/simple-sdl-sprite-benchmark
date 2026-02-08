@@ -22,6 +22,7 @@ typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;
+    SDL_Texture *ui_texture;
     SDL_Gamepad *gamepad;
     SDL_JoystickID gamepad_id;
     int texture_width;
@@ -31,6 +32,7 @@ typedef struct {
     int active_sprites;
     bool movement_enabled;
     bool rotation_enabled;
+    bool dirty_ui;
     Uint64 last_frame_time;
     Uint64 fps_update_time;
     Uint64 animate_update_time;
@@ -124,22 +126,25 @@ static void adjust_sprite_count(AppState *state, int delta) {
     if (state->active_sprites < 0) {
         state->active_sprites = 0;
     }
+    state->dirty_ui = true;
 }
 
 static inline void render_ui(AppState *state) {
-    /*
-    char fps_text[32];
-    SDL_snprintf(fps_text, sizeof(fps_text), "FPS %d", state->current_fps);
-    SDL_RenderDebugText(state->renderer, 10, 10, fps_text);
-    
-    char sprites_text[32];
-    SDL_snprintf(sprites_text, sizeof(sprites_text), "SPRITES %d", state->active_sprites);
-    SDL_RenderDebugText(state->renderer, 10, 30, sprites_text);
-    */
-   char fps_text[128];
-   SDL_snprintf(fps_text, sizeof(fps_text), "fps %d   sprites %d", state->current_fps, state->active_sprites);
-   SDL_Color black = {0,0,0,255};
-   debug_font_draw_string(state->renderer, fps_text, 10, 10, black);
+   if (state->dirty_ui) {
+       char fps_text[128];
+       SDL_snprintf(fps_text, sizeof(fps_text), "fps %d   sprites %d", state->current_fps, state->active_sprites);
+       SDL_Color black = {0,0,0,255};
+       
+       SDL_SetRenderTarget(state->renderer, state->ui_texture);
+       SDL_SetRenderDrawColor(state->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+       SDL_RenderClear(state->renderer);
+       debug_font_draw_string(state->renderer, fps_text, 10, 10, black);
+       SDL_SetRenderTarget(state->renderer, NULL);
+       
+       state->dirty_ui = false;
+   }
+   
+   SDL_RenderTexture(state->renderer, state->ui_texture, NULL, &(SDL_FRect){10, 10, 200, 30});
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
@@ -168,12 +173,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     }
     state->renderer = SDL_CreateGPURenderer(NULL, state->window);
     if(state->renderer == NULL){
+        SDL_Log("Couldn't create GPU renderer: %s", SDL_GetError());
+        state->renderer = SDL_CreateRenderer(state->window, NULL);
+    }
+
+    if(state->renderer == NULL){
         SDL_Log("Couldn't create renderer: %s", SDL_GetError());
         SDL_free(state);
         return SDL_APP_FAILURE;
     }
 
-    SDL_SetRenderLogicalPresentation(state->renderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_DISABLED);
+    //SDL_SetRenderLogicalPresentation(state->renderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_DISABLED);
 
     SDL_IOStream *io = SDL_IOFromMem(sprite_png, sprite_png_len);
     if (!io) {
@@ -211,6 +221,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     srand(2026); // deliberate
     state->num_sprites = MAX_SPRITES;
     state->active_sprites = INITIAL_SPRITES;
+    state->dirty_ui = true;
+    
+    state->ui_texture = SDL_CreateTexture(state->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 230, 30);
     
     for (int i = 0; i < state->num_sprites; i++) {
         init_sprite(&state->sprites[i]);
@@ -295,6 +308,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         state->current_fps = state->frame_count / 3;
         state->frame_count = 0;
         state->fps_update_time = now;
+        state->dirty_ui = true;
     }
 
     SDL_SetRenderDrawColor(state->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
@@ -335,6 +349,9 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     }
     if (state->texture) {
         SDL_DestroyTexture(state->texture);
+    }
+    if (state->ui_texture) {
+        SDL_DestroyTexture(state->ui_texture);
     }
     if (state->gamepad) {
         SDL_CloseGamepad(state->gamepad);
