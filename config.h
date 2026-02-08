@@ -1,0 +1,21 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define SCREEN_WIDTH 480
+#define SCREEN_HEIGHT 272
+
+#define SPRITE_WIDTH 48
+#define SPRITE_HEIGHT 48
+#define NUM_FRAMES 2
+#define FRAME_DURATION_MS 70
+
+#define MAX_SPRITES 10000
+#define INITIAL_SPRITES 100
+#define SPRITE_INCREMENT 100
+
+#define FONT_WIDTH 5
+#define FONT_HEIGHT 5
+
+#define MOVEMENT_ENABLED_DEFAULT true
+
+#endif

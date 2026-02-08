@@ -1,0 +1,7 @@
+build**
+eboot**
+tools**
+*.iso
+*.o
+*.elf
+bench_*
