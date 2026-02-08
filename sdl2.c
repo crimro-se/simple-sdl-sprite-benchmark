@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
                                      SDL_WINDOWPOS_CENTERED,
                                      SDL_WINDOWPOS_CENTERED,
                                      SCREEN_WIDTH, SCREEN_HEIGHT,
-                                     SDL_WINDOW_RESIZABLE);
+                                     0);
     if (!state->window) {
         SDL_Log("Couldn't create window: %s", SDL_GetError());
         return 1;
