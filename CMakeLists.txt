@@ -27,6 +27,8 @@ else()
     )
 endif()
 
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -pg -g")
+
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Release>:-O3>)
 
 # Create an EBOOT.PBP file

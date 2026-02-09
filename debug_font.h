@@ -2,6 +2,8 @@
  * debug_font.h - Simple embedded bitmap font renderer for SDL2/SDL3
  *                Lowercase and 0-9 text only. Not efficient!
  * 
+ *  This file is 99.9% AI Generated. No rights reserved.
+ * 
  * Usage:
  *   // AFTER including SDL2 or SDL3 !
  *   #include "debug_font.h"
