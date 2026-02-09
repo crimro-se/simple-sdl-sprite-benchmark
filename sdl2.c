@@ -236,6 +236,13 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    SDL_Log("Renderers:");
+    for(int i=0; i < SDL_GetNumRenderDrivers(); i++){
+        SDL_RendererInfo ri;
+        SDL_GetRenderDriverInfo(i, &ri);
+        SDL_Log(ri.name);
+    }
+
     // Load PNG from memory using SDL_image
     SDL_RWops *rw = SDL_RWFromMem(sprite_png, sprite_png_len);
     if (!rw) {
@@ -253,11 +260,14 @@ int main(int argc, char *argv[]) {
     state->texture_height = surface->h;
     state->texture = SDL_CreateTextureFromSurface(state->renderer, surface);
     SDL_FreeSurface(surface);
-    
     if (!state->texture) {
         SDL_Log("Couldn't create texture: %s", SDL_GetError());
         return 1;
     }
+    Uint32 format;
+    SDL_QueryTexture(state->texture, &format, NULL, NULL, NULL);
+    SDL_Log("Sprite format:");
+    SDL_Log(SDL_GetPixelFormatName(format));
 
     state->sprites = (Sprite *)calloc(MAX_SPRITES, sizeof(Sprite));
     if (!state->sprites) {

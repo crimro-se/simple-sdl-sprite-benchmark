@@ -147,6 +147,26 @@ static inline void render_ui(AppState *state) {
    SDL_RenderTexture(state->renderer, state->ui_texture, NULL, &(SDL_FRect){10, 10, 200, 30});
 }
 
+//enumerate and print rendering hw info.
+void print_all_renderers(){
+
+    SDL_Log("GPU Drivers:");
+    for (int i=0; i < SDL_GetNumGPUDrivers(); i++){
+        SDL_Log(SDL_GetGPUDriver(i));
+    }
+    if (SDL_GetNumGPUDrivers()==0){
+        SDL_Log("None.");
+    }
+
+    SDL_Log("Render Drivers:");
+    for(int i=0; i < SDL_GetNumRenderDrivers(); i++){
+        SDL_Log(SDL_GetRenderDriver(i));
+    }
+    if (SDL_GetNumRenderDrivers()==0){
+        SDL_Log("None.");
+    }
+}
+
 SDL_AppResult init_window(AppState *state){
     state->window = SDL_CreateWindow("SDL3 Sprite Benchmark", SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     if(state->window == NULL){
@@ -165,11 +185,6 @@ SDL_AppResult init_window(AppState *state){
         SDL_Log("Couldn't create renderer: %s", SDL_GetError());
         SDL_free(state);
         return SDL_APP_FAILURE;
-    }
-
-    // for debugging / optimizing.
-    for(int i=0; i < SDL_GetNumRenderDrivers(); i++){
-        SDL_Log(SDL_GetRenderDriver(i));
     }
     return SDL_APP_CONTINUE;
 }
@@ -192,6 +207,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     }
     state->movement_enabled = MOVEMENT_ENABLED_DEFAULT;
 
+    print_all_renderers();
     if(init_window(state)!= SDL_APP_CONTINUE){
         return SDL_APP_FAILURE;
     }
@@ -215,14 +231,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     state->texture_height = surface->h;
 
     state->texture = SDL_CreateTextureFromSurface(state->renderer, surface);
+    SDL_DestroySurface(surface);
     if (!state->texture) {
         SDL_Log("Couldn't create static texture: %s", SDL_GetError());
-        SDL_DestroySurface(surface);
         SDL_free(state);
         return SDL_APP_FAILURE;
     }
-
-    SDL_DestroySurface(surface);
+    
+    SDL_Log("Sprite format: ");
+    SDL_Log(SDL_GetPixelFormatName(state->texture->format));
 
     state->sprites = (Sprite *)SDL_calloc(MAX_SPRITES, sizeof(Sprite));
     if (!state->sprites) {
