@@ -160,7 +160,7 @@ static void process_event(AppState *state, SDL_Event *event) {
         if (event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN) {
             state->rotation_enabled = !state->rotation_enabled;
         }
-        if (event->cbutton.button == SDL_CONTROLLER_BUTTON_A) { // Mapped to EAST on many layouts
+        if (event->cbutton.button == SDL_CONTROLLER_BUTTON_B) { 
             state->running = false;
         }
     }
