@@ -102,7 +102,7 @@ static inline void render_sprite(AppState *state, Sprite *s) {
         SPRITE_HEIGHT 
     };
     
-    SDL_Rect dst_rect = { 
+    SDL_FRect dst_rect = { 
         s->x, 
         s->y, 
         SPRITE_WIDTH, 
@@ -110,10 +110,13 @@ static inline void render_sprite(AppState *state, Sprite *s) {
     };
 
     if (state->rotation_enabled) {
-        SDL_RenderCopyEx(state->renderer, state->texture, &src_rect, &dst_rect, 
+        //SDL_RenderCopyEx(state->renderer, state->texture, &src_rect, &dst_rect, 
+        //                 22.0, NULL, SDL_FLIP_NONE);
+        SDL_RenderCopyExF(state->renderer, state->texture, &src_rect, &dst_rect, 
                          22.0, NULL, SDL_FLIP_NONE);
     } else {
-        SDL_RenderCopy(state->renderer, state->texture, &src_rect, &dst_rect);
+        //SDL_RenderCopy(state->renderer, state->texture, &src_rect, &dst_rect);
+        SDL_RenderCopyF(state->renderer, state->texture, &src_rect, &dst_rect);
     }
 }
 
@@ -205,6 +208,9 @@ static inline void render_ui(AppState *state) {
 }
 
 int main(int argc, char *argv[]) {
+    //
+    // Init
+    //
     AppState *state = (AppState *)calloc(1, sizeof(AppState));
     if (!state) {
         SDL_Log("Couldn't allocate app state");
@@ -290,7 +296,9 @@ int main(int argc, char *argv[]) {
     state->fps_update_time = state->last_frame_time;
     state->animate_update_time = state->last_frame_time;
 
+    //
     // Main loop
+    //
     SDL_Event event;
     while (state->running) {
         // Event polling
@@ -333,7 +341,6 @@ int main(int argc, char *argv[]) {
 
         render_ui(state);
 
-        SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
         SDL_RenderPresent(state->renderer);
     }
 
