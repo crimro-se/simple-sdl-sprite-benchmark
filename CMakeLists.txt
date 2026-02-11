@@ -12,6 +12,7 @@ if(VITA)
 endif()
 
 project(bench) 
+set(CMAKE_C_STANDARD 99)
 set(VITA_APP_NAME "An SDL Sprite Benchmark")
 set(VITA_TITLEID  "CRSE00001")
 set(VITA_VERSION  "01.00")
@@ -25,7 +26,7 @@ endif()
 
 if(USE_SDL3)
     add_executable(${PROJECT_NAME} sdl3.c)
-    
+    target_compile_options(${PROJECT_NAME} PRIVATE -DSDL3)
     pkg_search_module(SDL3 REQUIRED sdl3)
     
     target_include_directories(${PROJECT_NAME} PRIVATE ${SDL3_INCLUDE_DIRS})
@@ -47,7 +48,7 @@ else()
     )
 endif()
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -pg -g")
+# set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -pg -g")
 
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Release>:-O3>)
 

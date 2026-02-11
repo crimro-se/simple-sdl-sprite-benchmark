@@ -1,7 +1,7 @@
 OPTIM = -O3
 
 CFLAGS = -std=c99 -pedantic -Wall -Wextra
-SDL3_FLAGS = -lSDL3 
+SDL3_FLAGS = -DSDL3 -lSDL3
 SDL2_FLAGS = -I/usr/include/SDL2 -D_GNU_SOURCE=1 -D_REENTRANT -lSDL2 -lSDL2_image
 
 #PSP_DIR = /opt/pspdev
