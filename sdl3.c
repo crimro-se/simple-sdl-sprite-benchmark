@@ -178,7 +178,7 @@ SDL_AppResult init_window(AppState *state){
     if(state->renderer == NULL){
         SDL_Log("Couldn't create GPU renderer: %s", SDL_GetError());
         state->renderer = SDL_CreateRenderer(state->window, 
-        "vulkan,opengl,PSP,psp,gpu,opengles2,software");
+        "vulkan,opengl,PSP,psp,VITA gxm,gpu,opengles2,software");
     }
 
     if(state->renderer == NULL){
