@@ -1,4 +1,3 @@
-#define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_render.h>
@@ -361,7 +360,6 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         render_sprite(state, s);
     }
 
-    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     render_ui(state);
 
     SDL_RenderPresent(state->renderer);
@@ -394,4 +392,25 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
         SDL_DestroyWindow(state->window);
     }
     SDL_free(state);
+}
+
+
+
+int main(int argc, char *argv[]) {
+    AppState *state;
+    if (SDL_AppInit((void**)&state,0, NULL) != SDL_APP_CONTINUE){
+        return EXIT_FAILURE;
+    }
+
+    SDL_AppResult result = SDL_APP_CONTINUE;
+    SDL_Event event;
+    while (SDL_AppIterate((void*)state) == SDL_APP_CONTINUE && result == SDL_APP_CONTINUE){
+        //process any available events each frame.
+        while (SDL_PollEvent(&event) && result == SDL_APP_CONTINUE) {
+            result = SDL_AppEvent(state, &event);
+        }
+    }
+    
+    SDL_AppQuit((void*)state, SDL_APP_SUCCESS);
+    return EXIT_SUCCESS;
 }
