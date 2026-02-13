@@ -14,7 +14,7 @@ Arrows or DPAD:
 - **DOWN** - Toggle a rotation transformation on all sprites
 
 Other:
-- **ESC** or **Cirlce Button** - Quit the application
+- **ESC** or **Circle Button** - Quit the application
 
 
 ## Results
