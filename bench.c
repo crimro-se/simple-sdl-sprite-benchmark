@@ -1,11 +1,12 @@
 #ifdef SDL3
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
-#include <SDL3/SDL_render.h>
+    #include <SDL3/SDL.h>
+    #include <SDL3/SDL_main.h>
+    #include <SDL3/SDL_render.h>
 #else
-#include <SDL.h>
-#include <SDL_image.h>
+    #include <SDL.h>
+    #include <SDL_image.h>
 #endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
@@ -51,9 +52,11 @@ typedef struct {
     bool running;
 } AppState;
 
+
 static int rand_range(int min, int max) {
     return min + (rand() % (1 + (max - min)));
 }
+
 
 static void init_sprite(Sprite *s) {
     s->x = rand_range(0, SCREEN_WIDTH - SPRITE_WIDTH);
@@ -66,6 +69,7 @@ static void init_sprite(Sprite *s) {
     s->frame_timer = 0;
     s->frame_duration = FRAME_DURATION_MS + rand_range(0, FRAME_DURATION_MS / 2);
 }
+
 
 static void update_sprite_position(Sprite *s, bool movement_enabled) {
     static int bound_left = 0 - SPRITE_WIDTH / 2;
@@ -96,6 +100,7 @@ static void update_sprite_position(Sprite *s, bool movement_enabled) {
     }
 }
 
+
 static inline void update_sprite_animation(Sprite *s, Uint64 delta_ms) {
     s->frame_timer += delta_ms;
     if (s->frame_timer >= s->frame_duration) {
@@ -104,6 +109,7 @@ static inline void update_sprite_animation(Sprite *s, Uint64 delta_ms) {
     }
 }
 
+
 static inline void render_sprite(AppState *state, Sprite *s) {
     SDL_FRect dst_rect = {
         s->x,
@@ -111,32 +117,33 @@ static inline void render_sprite(AppState *state, Sprite *s) {
         SPRITE_WIDTH,
         SPRITE_HEIGHT
     };
-#ifdef SDL3
-    SDL_FRect src_rect = {
-        (s->frame) * SPRITE_WIDTH,
-        0,
-        SPRITE_WIDTH,
-        SPRITE_HEIGHT
-    };
-    if (state->rotation_enabled) {
-        SDL_RenderTextureRotated(state->renderer, state->texture, &src_rect, &dst_rect, 22, NULL, SDL_FLIP_NONE);
-    } else {
-        SDL_RenderTexture(state->renderer, state->texture, &src_rect, &dst_rect);
-    }
-#else
-    SDL_Rect src_rect = {
-        (s->frame) * SPRITE_WIDTH,
-        0,
-        SPRITE_WIDTH,
-        SPRITE_HEIGHT
-    };
-    if (state->rotation_enabled) {
-        SDL_RenderCopyExF(state->renderer, state->texture, &src_rect, &dst_rect, 22.0, NULL, SDL_FLIP_NONE);
-    } else {
-        SDL_RenderCopyF(state->renderer, state->texture, &src_rect, &dst_rect);
-    }
-#endif
+    #ifdef SDL3
+        SDL_FRect src_rect = {
+            (s->frame) * SPRITE_WIDTH,
+            0,
+            SPRITE_WIDTH,
+            SPRITE_HEIGHT
+        };
+        if (state->rotation_enabled) {
+            SDL_RenderTextureRotated(state->renderer, state->texture, &src_rect, &dst_rect, 22, NULL, SDL_FLIP_NONE);
+        } else {
+            SDL_RenderTexture(state->renderer, state->texture, &src_rect, &dst_rect);
+        }
+    #else
+        SDL_Rect src_rect = {
+            (s->frame) * SPRITE_WIDTH,
+            0,
+            SPRITE_WIDTH,
+            SPRITE_HEIGHT
+        };
+        if (state->rotation_enabled) {
+            SDL_RenderCopyExF(state->renderer, state->texture, &src_rect, &dst_rect, 22.0, NULL, SDL_FLIP_NONE);
+        } else {
+            SDL_RenderCopyF(state->renderer, state->texture, &src_rect, &dst_rect);
+        }
+    #endif
 }
+
 
 static void adjust_sprite_count(AppState *state, int delta) {
     state->active_sprites += delta;
@@ -257,6 +264,7 @@ static void process_event(AppState *state, SDL_Event *event) {
 #endif
 }
 
+
 static inline void render_ui(AppState *state) {
     if (state->dirty_ui) {
         char fps_text[128];
@@ -272,25 +280,70 @@ static inline void render_ui(AppState *state) {
         state->dirty_ui = false;
     }
 
-#ifdef SDL3
-    SDL_RenderTexture(state->renderer, state->ui_texture, NULL, &(SDL_FRect){10, 10, 200, 30});
-#else
-    SDL_Rect ui_rect = {10, 10, 200, 30};
-    SDL_RenderCopy(state->renderer, state->ui_texture, NULL, &ui_rect);
-#endif
+    #ifdef SDL3
+        SDL_RenderTexture(state->renderer, state->ui_texture, NULL, &(SDL_FRect){10, 10, 200, 30});
+    #else
+        SDL_Rect ui_rect = {10, 10, 200, 30};
+        SDL_RenderCopy(state->renderer, state->ui_texture, NULL, &ui_rect);
+    #endif
 }
 
-void init_renderer(AppState *state){
-#ifdef SDL3
-    state->renderer = SDL_CreateGPURenderer(NULL, state->window);
-    if (state->renderer == NULL) {
-        state->renderer = SDL_CreateRenderer(state->window,
-            "vulkan,opengl,PSP,psp,VITA gxm,opengles2,gpu,software");
-    }
-#else
-    state->renderer = SDL_CreateRenderer(state->window, -1, SDL_RENDERER_ACCELERATED);
-#endif
+
+void init_window(AppState *state){
+    #ifdef SDL3
+        SDL_Log("SDL3");
+        state->window = SDL_CreateWindow("SDL3 Sprite Benchmark", 
+            SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    #else
+        SDL_Log("SDL2");
+        state->window = SDL_CreateWindow("SDL2 Sprite Benchmark",
+            SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    #endif
 }
+
+
+void init_renderer(AppState *state){
+    #ifdef SDL3
+        state->renderer = SDL_CreateGPURenderer(NULL, state->window);
+        if (state->renderer == NULL) {
+            state->renderer = SDL_CreateRenderer(state->window,
+                "vulkan,opengl,PSP,psp,VITA gxm,opengles2,gpu,software");
+        }
+    #else
+        state->renderer = SDL_CreateRenderer(state->window, -1, SDL_RENDERER_ACCELERATED);
+    #endif
+}
+
+void print_renderers(AppState *state){
+        #ifdef SDL3
+        SDL_Log("GPU Drivers:");
+        for (int i=0; i < SDL_GetNumGPUDrivers(); i++){
+            SDL_Log(SDL_GetGPUDriver(i));
+        }
+    #endif
+
+    SDL_Log("Render Drivers:");
+    for(int i=0; i < SDL_GetNumRenderDrivers(); i++){
+        #ifdef SDL3
+            SDL_Log(SDL_GetRenderDriver(i));
+        #else
+            SDL_RendererInfo ri;
+            SDL_GetRenderDriverInfo(i, &ri);
+            SDL_Log(ri.name);
+        #endif
+    }
+
+    #ifdef SDL3
+        SDL_Log("renderer chosen: ");
+        SDL_Log(SDL_GetRendererName(state->renderer)); 
+    #else
+        SDL_RendererInfo info;
+        SDL_GetRendererInfo(state->renderer,&info);
+        SDL_Log("renderer chosen: ");
+        SDL_Log(info.name);
+    #endif
+}
+
 
 int init_app(AppState **appstate){
     AppState *state = (AppState *)calloc(1, sizeof(AppState));
@@ -302,29 +355,20 @@ int init_app(AppState **appstate){
     state->running = true;
     state->movement_enabled = MOVEMENT_ENABLED_DEFAULT;
 
-#ifdef SDL3
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
-        return EXIT_FAILURE;
-    }
-#else
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK) < 0) {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
-        return EXIT_FAILURE;
-    }
-#endif
+    #ifdef SDL3
+        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+            SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
+            return EXIT_FAILURE;
+        }
+    #else
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK) < 0) {
+            SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
+            return EXIT_FAILURE;
+        }
+    #endif
 
-#ifdef SDL3
-    SDL_Log("SDL3");
-    state->window = SDL_CreateWindow("SDL3 Sprite Benchmark", SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-#else
-    SDL_Log("SDL2");
-    state->window = SDL_CreateWindow("SDL2 Sprite Benchmark",
-                                     SDL_WINDOWPOS_CENTERED,
-                                     SDL_WINDOWPOS_CENTERED,
-                                     SCREEN_WIDTH, SCREEN_HEIGHT,
-                                     0);
-#endif
+
+    init_window(state);
     if (!state->window) {
         SDL_Log("Couldn't create window: %s", SDL_GetError());
         return EXIT_FAILURE;
@@ -337,83 +381,64 @@ int init_app(AppState **appstate){
         return EXIT_FAILURE;
     }
 
-#ifdef SDL3
-    SDL_Log("GPU Drivers:");
-    for (int i=0; i < SDL_GetNumGPUDrivers(); i++){
-        SDL_Log(SDL_GetGPUDriver(i));
-    }
-#endif
-    SDL_Log("Render Drivers:");
-    for(int i=0; i < SDL_GetNumRenderDrivers(); i++){
-#ifdef SDL3
-        SDL_Log(SDL_GetRenderDriver(i));
-#else
-        SDL_RendererInfo ri;
-        SDL_GetRenderDriverInfo(i, &ri);
-        SDL_Log(ri.name);
-#endif
-    }
+    // The window is created as hidden and only shown after a renderer is chosen,
+    // in-line with CreateWindow documentation advice.
+    SDL_ShowWindow(state->window);
 
-    
+    print_renderers(state);
 
-#ifdef SDL3
-    SDL_Log("renderer chosen: ");
-    SDL_Log(SDL_GetRendererName(state->renderer)); 
-
-    SDL_IOStream *io = SDL_IOFromMem(sprite_png, sprite_png_len);
-    if (!io) {
-        SDL_Log("Couldn't create IO: %s", SDL_GetError());
-        return 1;
-    }
-    SDL_Surface *surface = SDL_LoadPNG_IO(io, true);
-#else
-    SDL_RendererInfo info;
-    SDL_GetRendererInfo(state->renderer,&info);
-    SDL_Log("renderer chosen: ");
-    SDL_Log(info.name);
-
-    SDL_RWops *rw = SDL_RWFromMem(sprite_png, sprite_png_len);
-    if (!rw) {
-        SDL_Log("Couldn't create RW: %s", SDL_GetError());
-        return 1;
-    }
-    SDL_Surface *surface = IMG_Load_RW(rw, 1);
-#endif
+    #ifdef SDL3
+        SDL_IOStream *io = SDL_IOFromMem(sprite_png, sprite_png_len);
+        if (!io) {
+            SDL_Log("Couldn't create IO: %s", SDL_GetError());
+            return EXIT_FAILURE;
+        }
+        SDL_Surface *surface = SDL_LoadPNG_IO(io, true);
+    #else
+        SDL_RWops *rw = SDL_RWFromMem(sprite_png, sprite_png_len);
+        if (!rw) {
+            SDL_Log("Couldn't create RW: %s", SDL_GetError());
+            return EXIT_FAILURE;
+        }
+        SDL_Surface *surface = IMG_Load_RW(rw, 1);
+    #endif
     if (!surface) {
         SDL_Log("Couldn't load png: %s", SDL_GetError());
-        return 1;
+        return EXIT_FAILURE;
     }
 
     state->texture_width = surface->w;
     state->texture_height = surface->h;
     state->texture = SDL_CreateTextureFromSurface(state->renderer, surface);
-#ifdef SDL3
-    SDL_DestroySurface(surface);
-#else
-    SDL_FreeSurface(surface);
-#endif
+    #ifdef SDL3
+        SDL_DestroySurface(surface);
+    #else
+        SDL_FreeSurface(surface);
+    #endif
+
     if (!state->texture) {
         SDL_Log("Couldn't create texture: %s", SDL_GetError());
-        return 1;
+        return EXIT_FAILURE;
     }
-#ifdef SDL3
-    SDL_Log("Sprite format: ");
-    SDL_Log(SDL_GetPixelFormatName(state->texture->format));
-#else
-    Uint32 format;
-    SDL_QueryTexture(state->texture, &format, NULL, NULL, NULL);
-    SDL_Log("Sprite format:");
-    SDL_Log(SDL_GetPixelFormatName(format));
-#endif
 
-#ifdef SDL3
-    state->sprites = (Sprite *)SDL_calloc(MAX_SPRITES, sizeof(Sprite));
-#else
-    state->sprites = (Sprite *)calloc(MAX_SPRITES, sizeof(Sprite));
-#endif
+    #ifdef SDL3
+        SDL_Log("Sprite format: ");
+        SDL_Log(SDL_GetPixelFormatName(state->texture->format));
+    #else
+        Uint32 format;
+        SDL_QueryTexture(state->texture, &format, NULL, NULL, NULL);
+        SDL_Log("Sprite format:");
+        SDL_Log(SDL_GetPixelFormatName(format));
+    #endif
+
+    #ifdef SDL3
+        state->sprites = (Sprite *)SDL_calloc(MAX_SPRITES, sizeof(Sprite));
+    #else
+        state->sprites = (Sprite *)calloc(MAX_SPRITES, sizeof(Sprite));
+    #endif
     if (!state->sprites) {
         SDL_Log("Couldn't allocate sprite array");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     srand(2026);
@@ -422,6 +447,10 @@ int init_app(AppState **appstate){
     state->dirty_ui = true;
 
     state->ui_texture = SDL_CreateTexture(state->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 230, 30);
+    if (!state->ui_texture){
+        SDL_Log("Couldn't create texture: %s", SDL_GetError());
+        return EXIT_FAILURE;
+    }
 
     for (int i = 0; i < state->num_sprites; i++) {
         init_sprite(&state->sprites[i]);
@@ -440,26 +469,31 @@ void cleanup_app(AppState* state){
     if (state == NULL){
         return;
     }
+
     #ifdef SDL3
-    if (state->sprites) SDL_free(state->sprites);
-#else
-    if (state->sprites) free(state->sprites);
-#endif
+        if (state->sprites) SDL_free(state->sprites);
+    #else
+        if (state->sprites) free(state->sprites);
+    #endif
+
     if (state->texture) SDL_DestroyTexture(state->texture);
     if (state->ui_texture) SDL_DestroyTexture(state->ui_texture);
-#ifdef SDL3
-    if (state->gamepad) SDL_CloseGamepad(state->gamepad);
-#else
-    if (state->gamepad) SDL_GameControllerClose(state->gamepad);
-#endif
+
+    #ifdef SDL3
+        if (state->gamepad) SDL_CloseGamepad(state->gamepad);
+    #else
+        if (state->gamepad) SDL_GameControllerClose(state->gamepad);
+    #endif
+
     if (state->renderer) SDL_DestroyRenderer(state->renderer);
     if (state->window) SDL_DestroyWindow(state->window);
     SDL_Quit();
-#ifdef SDL3
-    SDL_free(state);
-#else
-    free(state);
-#endif
+
+    #ifdef SDL3
+        SDL_free(state);
+    #else
+        free(state);
+    #endif
 }
 
 int main(int argc, char *argv[]) {
