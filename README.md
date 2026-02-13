@@ -57,6 +57,7 @@ cd build
 make
 ```
 
+
 ## Modifying
 
 - Consult config.h for various settings you may wish to change.
@@ -67,6 +68,3 @@ After updating the sprite data, you may regenerate this file:
 ```bash
 xxd -i sprite.png > sprite_data.h
 ```
-
-## Running
-
