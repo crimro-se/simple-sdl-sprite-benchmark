@@ -13,9 +13,6 @@
 #define INITIAL_SPRITES 100
 #define SPRITE_INCREMENT 100
 
-#define FONT_WIDTH 5
-#define FONT_HEIGHT 5
-
 #define MOVEMENT_ENABLED_DEFAULT true
 
 #endif
