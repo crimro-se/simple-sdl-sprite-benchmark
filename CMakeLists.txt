@@ -24,17 +24,16 @@ if(VITA)
     include("${VITASDK}/share/vita.cmake" REQUIRED)
 endif()
 
+add_executable(${PROJECT_NAME} bench.c)
+
 if(USE_SDL3)
-    add_executable(${PROJECT_NAME} bench.c)
     target_compile_options(${PROJECT_NAME} PRIVATE -DSDL3)
     pkg_search_module(SDL3 REQUIRED sdl3)
     
     target_include_directories(${PROJECT_NAME} PRIVATE ${SDL3_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL3_LIBRARIES})
 
-else()
-    add_executable(${PROJECT_NAME} bench.c)
-    
+else()    
     pkg_search_module(SDL2 REQUIRED sdl2)
     pkg_search_module(SDL2_IMAGE REQUIRED SDL2_image)
     
