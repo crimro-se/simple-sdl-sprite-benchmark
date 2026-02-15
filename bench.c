@@ -20,8 +20,8 @@ typedef struct {
     // positions and velocities are 24.8 fixed point
     Sint32 x, y, dx, dy;
     int frame;
-    Uint64 frame_timer;
-    Uint64 frame_duration;
+    Uint32 frame_timer;
+    Uint32 frame_duration;
 } Sprite;
 
 typedef struct {
