@@ -17,8 +17,8 @@
 #include "debug_font.h"
 
 typedef struct {
-    int32_t x, y;
-    int32_t dx, dy;
+    // positions and velocities are 24.8 fixed point
+    Sint32 x, y, dx, dy;
     int frame;
     Uint64 frame_timer;
     Uint64 frame_duration;
@@ -44,9 +44,9 @@ typedef struct {
     bool movement_enabled;
     bool rotation_enabled;
     bool dirty_ui;
-    Uint64 last_frame_time;
-    Uint64 fps_update_time;
-    Uint64 animate_update_time;
+    Uint32 last_frame_time;
+    Uint32 fps_update_time;
+    Uint32 animate_update_time;
     int frame_count;
     int current_fps;
     bool running;
@@ -59,10 +59,10 @@ static int rand_range(int min, int max) {
 
 
 static void init_sprite(Sprite *s) {
-    s->x = rand_range(0, SCREEN_WIDTH - SPRITE_WIDTH);
-    s->y = rand_range(0, SCREEN_HEIGHT - SPRITE_HEIGHT);
-    s->dx = rand_range(1, 4);
-    s->dy = rand_range(1, 4);
+    s->x = rand_range(0, (SCREEN_WIDTH - SPRITE_WIDTH) << 8);
+    s->y = rand_range(0, (SCREEN_HEIGHT - SPRITE_HEIGHT) << 8);
+    s->dx = rand_range(1, SPRITE_MAX_SPEED);
+    s->dy = rand_range(1, SPRITE_MAX_SPEED);
     if (rand_range(1, 2) == 2) s->dx = -1 * s->dx;
     if (rand_range(1, 2) == 2) s->dy = -1 * s->dy;
     s->frame = rand_range(0, NUM_FRAMES - 1);
@@ -71,16 +71,16 @@ static void init_sprite(Sprite *s) {
 }
 
 
-static void update_sprite_position(Sprite *s, bool movement_enabled) {
-    static int bound_left = 0 - SPRITE_WIDTH / 2;
-    static int bound_right = SCREEN_WIDTH - SPRITE_WIDTH / 2;
-    static int bound_top = 0 - SPRITE_HEIGHT / 2;
-    static int bound_bottom = SCREEN_HEIGHT - SPRITE_HEIGHT / 2;
+static void update_sprite_position(Sprite *s, Sint32 delta) {
+    static const int bound_left = (0 - SPRITE_WIDTH / 2) << 8;
+    static const int bound_right = (SCREEN_WIDTH - SPRITE_WIDTH / 2) << 8;
+    static const int bound_top = (0 - SPRITE_HEIGHT / 2) << 8;
+    static const int bound_bottom = (SCREEN_HEIGHT - SPRITE_HEIGHT / 2) << 8;
 
-    if (!movement_enabled) return;
+    const Sint32 delta_fp = delta << 8;
 
-    s->x += s->dx;
-    s->y += s->dy;
+    s->x += (s->dx * delta_fp/UPDATE_INTERVAL_MS) >> 8;
+    s->y += (s->dy * delta_fp/UPDATE_INTERVAL_MS) >> 8;
 
     if (s->x < bound_left) {
         s->x = bound_left;
@@ -101,7 +101,7 @@ static void update_sprite_position(Sprite *s, bool movement_enabled) {
 }
 
 
-static inline void update_sprite_animation(Sprite *s, Uint64 delta_ms) {
+static inline void update_sprite_animation(Sprite *s, Uint32 delta_ms) {
     s->frame_timer += delta_ms;
     if (s->frame_timer >= s->frame_duration) {
         s->frame = (s->frame + 1) % NUM_FRAMES;
@@ -111,7 +111,7 @@ static inline void update_sprite_animation(Sprite *s, Uint64 delta_ms) {
 
 
 static inline void render_sprite(AppState *state, Sprite *s) {
-    SDL_FRect dst_rect = {s->x, s->y, SPRITE_WIDTH, SPRITE_HEIGHT};
+    SDL_FRect dst_rect = {s->x >> 8, s->y >> 8, SPRITE_WIDTH, SPRITE_HEIGHT};
 
 #ifdef SDL3
     SDL_FRect src_rect = {(s->frame) * SPRITE_WIDTH, 0, SPRITE_WIDTH, SPRITE_HEIGHT};
@@ -509,7 +509,7 @@ void cleanup_app(AppState *state) {
 }
 
 
-static void update_fps(AppState *state, Uint64 now) {
+static void update_fps(AppState *state, Uint32 now) {
     if (now - state->fps_update_time >= 3000) {
         state->current_fps = state->frame_count / 3;
         state->frame_count = 0;
@@ -519,9 +519,10 @@ static void update_fps(AppState *state, Uint64 now) {
 }
 
 
-static void update_and_render_sprites(AppState *state, Uint64 now) {
+static void update_and_render_sprites(AppState *state, Uint32 now) {
     bool animate = false;
-    if (now - state->animate_update_time >= 15) {
+    Uint32  delta = now - state->animate_update_time;
+    if (delta >= UPDATE_INTERVAL_MS) {
         animate = true;
         state->animate_update_time = now;
     }
@@ -529,8 +530,8 @@ static void update_and_render_sprites(AppState *state, Uint64 now) {
     for (int i = 0; i < state->active_sprites; i++) {
         Sprite *s = &state->sprites[i];
         if (animate) {
-            update_sprite_position(s, state->movement_enabled);
-            update_sprite_animation(s, 15);
+            if(state->movement_enabled) update_sprite_position(s, delta);
+            update_sprite_animation(s, delta);
         }
         render_sprite(state, s);
     }
@@ -553,7 +554,7 @@ int main(int argc, char *argv[]) {
             process_event(state, &event);
         }
 
-        Uint64 now = SDL_GetTicks();
+        Uint32 now = SDL_GetTicks();
         state->last_frame_time = now;
         state->frame_count++;
 
